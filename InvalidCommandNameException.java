@@ -1,5 +1,3 @@
-package cdl;
-
 public class InvalidCommandNameException extends Exception{
 	 
 	/**

@@ -1,5 +1,3 @@
-package cdl;
-
 public class Add implements Commands{
 
 
