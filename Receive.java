@@ -1,4 +1,4 @@
-package cdl;
+import java.util.concurrent.TimeUnit;
 
 public class Receive implements Commands{
 
@@ -10,8 +10,12 @@ public class Receive implements Commands{
 	}
 	
 	@Override
-	public void execute(Process p) {
+	public void execute(Process p) throws InterruptedException {
 		// TODO Auto-generated method stub
+		Object o = Main.communicationChannel[p.getProcessIndex()].poll(1L, TimeUnit.SECONDS);
+		if (o != null)
+			p.setRegisterValue(registerIndex, (Integer) o);
+		else p.setDeadlock();
 		
 	}
 
