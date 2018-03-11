@@ -1,15 +1,21 @@
-package cdl;
-
 public class Mod implements Commands{
 
 
 	private int registerIndex;
-	private int value;
-	
+	private int valueOrRegisterIndex;;
+	private boolean isRegisterIndex;
 
-	public Mod(int registerIndex, int value) {
+
+	public Mod(String valueOrRegisterIndex, int registerIndex) {
+		this.isRegisterIndex = false;
 		this.registerIndex = registerIndex;
-		this.value = value;
+		
+		if (valueOrRegisterIndex.charAt(0) == 'R') {
+			this.isRegisterIndex = true;
+			this.valueOrRegisterIndex = Integer.parseInt(valueOrRegisterIndex.substring(1));
+		} else {
+			this.valueOrRegisterIndex = Integer.parseInt(valueOrRegisterIndex);
+		}
 	}
 	
 	@Override
@@ -17,7 +23,11 @@ public class Mod implements Commands{
 		// TODO Auto-generated method stub
 		if (registerIndex > 31 || registerIndex < 0) return;
 		int oldValue = p.getRegisterValue(registerIndex);
-		p.setRegisterValue(registerIndex, oldValue % value);
+		int modValue = valueOrRegisterIndex;
+		if (isRegisterIndex == true) {
+			modValue = p.getRegisterValue(valueOrRegisterIndex);
+		}
+		p.setRegisterValue(registerIndex, oldValue % modValue);
 	}
 
 }
