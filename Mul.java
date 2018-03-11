@@ -1,16 +1,23 @@
-package cdl;
-
 public class Mul implements Commands{
 
 
 	private int registerIndex;
-	private int value;
-	
+	private int valueOrRegisterIndex;
+	private boolean isRegisterIndex;
 
-	public Mul(int registerIndex, int value) {
+
+	public Mul(String valueOrRegisterIndex, int registerIndex) {
+		this.isRegisterIndex = false;
 		this.registerIndex = registerIndex;
-		this.value = value;
+		
+		if (valueOrRegisterIndex.charAt(0) == 'R') {
+			this.isRegisterIndex = true;
+			this.valueOrRegisterIndex = Integer.parseInt(valueOrRegisterIndex.substring(1));
+		} else {
+			this.valueOrRegisterIndex = Integer.parseInt(valueOrRegisterIndex);
+		}
 	}
+	
 	
 	@Override
 	public void execute(Process p) {
@@ -19,7 +26,11 @@ public class Mul implements Commands{
 		if (registerIndex > 31 || registerIndex < 0) return;
 		
 		int oldValue = p.getRegisterValue(registerIndex);
-		p.setRegisterValue(registerIndex, oldValue * value);
+		int mulValue = valueOrRegisterIndex;
+		if (isRegisterIndex == true) {
+			mulValue = p.getRegisterValue(valueOrRegisterIndex);
+		}
+		p.setRegisterValue(registerIndex, oldValue * mulValue);
 	}
 
 }
