@@ -1,61 +1,64 @@
-package cdl;
-
 import java.lang.System;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 
 public class Main {
 	
 	public static ArrayList<Commands> commands;
-	public static Vector<Vector<Integer>> communicationChannel;
+	public static ArrayList<ArrayList<Integer>> result;
+	public static BlockingQueue<Integer>[] communicationChannel;
 	public static int numberOfProcesses;
 	private static void addCommand(String name) throws InvalidCommandNameException {
 		
 		String[] tokens = name.split(" ");
 		if (tokens.length == 0) throw new InvalidCommandNameException("Empty instruction");
-		
+		//for (String s : tokens)
+		//	System.out.println(s);
 		if (tokens[0].equals("set")) {
 		
 				if (tokens.length < 3) throw new InvalidCommandNameException("Invalid set instruction");
-				int constantValue = Integer.parseInt(tokens[1]);
-				int registerIndex = Integer.parseInt(tokens[2].substring(1));
-				commands.add(new Set(constantValue, registerIndex));
+				String valueOrRegisterIndex = tokens[2];
+				int registerIndex = Integer.parseInt(tokens[1].substring(1));
+				commands.add(new Set(valueOrRegisterIndex, registerIndex));
 		}
 		else if (tokens[0].equals("add")) {
 			
 			if (tokens.length < 3) throw new InvalidCommandNameException("Invalid add instruction");
-			int constantValue = Integer.parseInt(tokens[1]);
-			int registerIndex = Integer.parseInt(tokens[2].substring(1));
-			commands.add(new Add(constantValue, registerIndex));
+			String valueOrRegisterIndex = tokens[2];
+			int registerIndex = Integer.parseInt(tokens[1].substring(1));
+			commands.add(new Add(valueOrRegisterIndex, registerIndex));
 		}
 
 		else if (tokens[0].equals("mul")) {
 			
 			if (tokens.length < 3) throw new InvalidCommandNameException("Invalid mul instruction");
-			int constantValue = Integer.parseInt(tokens[1]);
-			int registerIndex = Integer.parseInt(tokens[2].substring(1));
-			commands.add(new Mul(constantValue, registerIndex));
+			String valueOrRegisterIndex = tokens[2];
+			int registerIndex = Integer.parseInt(tokens[1].substring(1));
+			commands.add(new Mul(valueOrRegisterIndex, registerIndex));
 		}
 
 		else if (tokens[0].equals("mod")) {
 			
 			if (tokens.length < 3) throw new InvalidCommandNameException("Invalid mod instruction");
-			int constantValue = Integer.parseInt(tokens[1]);
-			int registerIndex = Integer.parseInt(tokens[2].substring(1));
-			commands.add(new Mod(constantValue, registerIndex));
+			String valueOrRegisterIndex = tokens[2];
+			int registerIndex = Integer.parseInt(tokens[1].substring(1));
+			commands.add(new Mod(valueOrRegisterIndex, registerIndex));
 		}
 
 		else if (tokens[0].equals("jgz")) {
 			
 			if (tokens.length < 3) throw new InvalidCommandNameException("Invalid jgz instruction");
-			int commandsIndex = Integer.parseInt(tokens[1]);
-			int registerIndex = Integer.parseInt(tokens[2].substring(1));
-			commands.add(new Jgz(commandsIndex, registerIndex));
+			String numberOfCommandsOrRegisterIndex = tokens[1];
+			String stepsToJump = tokens[2];
+			commands.add(new Jgz(numberOfCommandsOrRegisterIndex, stepsToJump));
 		}
 
 		else if (tokens[0].equals("snd")) {
@@ -72,7 +75,7 @@ public class Main {
 		else throw new InvalidCommandNameException("Invalid instruction name");
 	}
 	
-	private static void readFile(String fileName) throws InvalidCommandNameException {
+	private static void readFile(String fileName) throws InvalidCommandNameException, IOException {
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
 			
@@ -96,28 +99,48 @@ public class Main {
 		
 	}
 	
-	public static void main(String[] args) throws InvalidCommandNameException {
+	private static void printResult(String fileName) throws IOException{
+		
+		 BufferedWriter outputWriter = null;
+		 outputWriter = new BufferedWriter(new FileWriter(fileName));
+		 for (int i = 0; i < numberOfProcesses; ++i) {
+			 for (int j = 0; j < result.get(i).size(); ++j)
+				 outputWriter.write(Integer.toString(result.get(i).get(j)) + " ");
+			 outputWriter.newLine();
+		 }
+		 outputWriter.flush();
+		 outputWriter.close();
+	}
+	public static void main(String[] args) throws InvalidCommandNameException, IOException {
 		
 		commands = new ArrayList<Commands>();
 		readFile("code.in");
-		communicationChannel = new Vector<Vector<Integer>>(numberOfProcesses);
+
+		result = new ArrayList<ArrayList<Integer>>(numberOfProcesses);
+		for (int i = 0; i < numberOfProcesses; ++i)
+			result.add(new ArrayList<Integer>());
+		int numberOfCommands = commands.size();
+		communicationChannel = new ArrayBlockingQueue[numberOfProcesses];
+		for (int i = 0; i < numberOfProcesses; ++i) {
+			communicationChannel[i] = new ArrayBlockingQueue<>(1000);
+		}
 	    
 		Process[] processes = new Process[numberOfProcesses];
-		
-		for (int i = 0; i < numberOfProcesses; i++) {
-			processes[i] = new Process(i);
+		for (int i = 0; i < numberOfProcesses; ++i) {
+			processes[i] = new Process(i, 32);
 		}
-		
-		for (int i = 0; i < numberOfProcesses; i++)
+		for (int i = 0; i < numberOfProcesses; ++i)
 			processes[i].start();
 			
-		for (int i = 0; i < numberOfProcesses; i++) {
+		for (int i = 0; i < numberOfProcesses; ++i) {
 			try {
 				processes[i].join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+		printResult("code.out");
+
 	}
 
 }
